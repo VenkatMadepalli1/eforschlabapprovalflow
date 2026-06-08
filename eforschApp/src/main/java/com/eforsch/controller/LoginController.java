@@ -105,6 +105,7 @@ public class LoginController {
     }
     
     @PostMapping("/logout")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> logout(@RequestBody LogoutRequest logoutRequest) {
         String token = logoutRequest.getToken();
         
@@ -125,7 +126,7 @@ public class LoginController {
     private void invalidateToken(String token) {
            // Logic to invalidate token
     		userTokenRepository.deleteByToken(token);
-    	
+
     }
    
     @PostMapping("/forgot-password")

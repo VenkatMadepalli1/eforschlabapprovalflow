@@ -53,6 +53,12 @@ public class FineChemicalInventory {
     private String substitutionCheck;
     private String substitutionOption;
     private String storageLocation;
+    private String applicationOfHazardousSubstance;
+    private String concentrationWorkingVolume;
+    private String labNoWorkingWithChemical;
+    private String numberOfEmployees;
+    private String handlingDurationGreater15Min;
+    private String hazardousDueToSkinContact;
     private String groupName;
     private String qtypriceordered;
     private String priority;
@@ -69,7 +75,7 @@ public class FineChemicalInventory {
     private String fileType;
 
     @Lob
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @Column(name = "filecontent", columnDefinition = "LONGBLOB")
     private byte[] fileContent;
 
@@ -313,6 +319,24 @@ public class FineChemicalInventory {
 	public void setStorageLocation(String storageLocation) {
 		this.storageLocation = storageLocation;
 	}
+
+	public String getApplicationOfHazardousSubstance() { return applicationOfHazardousSubstance; }
+	public void setApplicationOfHazardousSubstance(String v) { this.applicationOfHazardousSubstance = v; }
+
+	public String getConcentrationWorkingVolume() { return concentrationWorkingVolume; }
+	public void setConcentrationWorkingVolume(String v) { this.concentrationWorkingVolume = v; }
+
+	public String getLabNoWorkingWithChemical() { return labNoWorkingWithChemical; }
+	public void setLabNoWorkingWithChemical(String v) { this.labNoWorkingWithChemical = v; }
+
+	public String getNumberOfEmployees() { return numberOfEmployees; }
+	public void setNumberOfEmployees(String v) { this.numberOfEmployees = v; }
+
+	public String getHandlingDurationGreater15Min() { return handlingDurationGreater15Min; }
+	public void setHandlingDurationGreater15Min(String v) { this.handlingDurationGreater15Min = v; }
+
+	public String getHazardousDueToSkinContact() { return hazardousDueToSkinContact; }
+	public void setHazardousDueToSkinContact(String v) { this.hazardousDueToSkinContact = v; }
 
 	public String getGroupName() {
 		return groupName;

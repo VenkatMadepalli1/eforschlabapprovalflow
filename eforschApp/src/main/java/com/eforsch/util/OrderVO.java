@@ -62,7 +62,35 @@
 	    private String createdBy;
 	    private String updatedBy;
 	    private String groupName;
-	    
+	    private String rejectReason;
+	    private String orderType;
+	    private String barcodeInfo;
+	    private String applicationOfHazardousSubstance;
+	    private String concentrationWorkingVolume;
+	    private String labNoWorkingWithChemical;
+	    private String numberOfEmployees;
+	    private String handlingDurationGreater15Min;
+	    private String hazardousDueToSkinContact;
+
+	    public String getRejectReason() { return rejectReason; }
+	    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
+	    public String getOrderType() { return orderType; }
+	    public void setOrderType(String v) { this.orderType = v; }
+	    public String getBarcodeInfo() { return barcodeInfo; }
+	    public void setBarcodeInfo(String v) { this.barcodeInfo = v; }
+	    public String getApplicationOfHazardousSubstance() { return applicationOfHazardousSubstance; }
+	    public void setApplicationOfHazardousSubstance(String v) { this.applicationOfHazardousSubstance = v; }
+	    public String getConcentrationWorkingVolume() { return concentrationWorkingVolume; }
+	    public void setConcentrationWorkingVolume(String v) { this.concentrationWorkingVolume = v; }
+	    public String getLabNoWorkingWithChemical() { return labNoWorkingWithChemical; }
+	    public void setLabNoWorkingWithChemical(String v) { this.labNoWorkingWithChemical = v; }
+	    public String getNumberOfEmployees() { return numberOfEmployees; }
+	    public void setNumberOfEmployees(String v) { this.numberOfEmployees = v; }
+	    public String getHandlingDurationGreater15Min() { return handlingDurationGreater15Min; }
+	    public void setHandlingDurationGreater15Min(String v) { this.handlingDurationGreater15Min = v; }
+	    public String getHazardousDueToSkinContact() { return hazardousDueToSkinContact; }
+	    public void setHazardousDueToSkinContact(String v) { this.hazardousDueToSkinContact = v; }
+
 	    public String getAttachment() {
 			return attachment;
 		}

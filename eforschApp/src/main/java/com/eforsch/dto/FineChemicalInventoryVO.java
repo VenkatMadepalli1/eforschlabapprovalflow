@@ -4,17 +4,23 @@ package com.eforsch.dto;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FineChemicalInventoryVO {
 
     private Long productId;
     private String productname;
     private String companyname;
     private String quantity;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date expiryDate;
     private String companyInternalNo;
     private String sapMaterialNo;
     private String wvsubqty;
     private String budgetno;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date orderdate;
     private String orderedby;
     private String concentration;
@@ -31,11 +37,18 @@ public class FineChemicalInventoryVO {
     private String substitutionCheck;
     private String substitutionOption;
     private String storageLocation;
+    private String applicationOfHazardousSubstance;
+    private String concentrationWorkingVolume;
+    private String labNoWorkingWithChemical;
+    private String numberOfEmployees;
+    private String handlingDurationGreater15Min;
+    private String hazardousDueToSkinContact;
     private String groupName;
     private String qtypriceordered;
     private String priority;
     private String received;
     private String catalogue;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Date createdAt;
     private double price;
     
@@ -220,6 +233,19 @@ public class FineChemicalInventoryVO {
 	public void setStorageLocation(String storageLocation) {
 		this.storageLocation = storageLocation;
 	}
+	public String getApplicationOfHazardousSubstance() { return applicationOfHazardousSubstance; }
+	public void setApplicationOfHazardousSubstance(String v) { this.applicationOfHazardousSubstance = v; }
+	public String getConcentrationWorkingVolume() { return concentrationWorkingVolume; }
+	public void setConcentrationWorkingVolume(String v) { this.concentrationWorkingVolume = v; }
+	public String getLabNoWorkingWithChemical() { return labNoWorkingWithChemical; }
+	public void setLabNoWorkingWithChemical(String v) { this.labNoWorkingWithChemical = v; }
+	public String getNumberOfEmployees() { return numberOfEmployees; }
+	public void setNumberOfEmployees(String v) { this.numberOfEmployees = v; }
+	public String getHandlingDurationGreater15Min() { return handlingDurationGreater15Min; }
+	public void setHandlingDurationGreater15Min(String v) { this.handlingDurationGreater15Min = v; }
+	public String getHazardousDueToSkinContact() { return hazardousDueToSkinContact; }
+	public void setHazardousDueToSkinContact(String v) { this.hazardousDueToSkinContact = v; }
+	
 	public String getGroupName() {
 		return groupName;
 	}

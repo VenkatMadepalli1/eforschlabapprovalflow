@@ -22,9 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.eforsch.dto.FileDownload;
 import com.eforsch.dto.FineChemicalInventoryVO;
 import com.eforsch.dto.User;
-
 import com.eforsch.service.FineChemicalService;
-import com.eforsch.util.InventoryVO;
 import com.eforsch.util.SuccessResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -101,7 +99,6 @@ public class FineChemicalController {
 	@PutMapping("/updateFineChemical/{id}")
 	@Operation(summary = "Update Fine Chemical Inventory by ID")
 	public ResponseEntity<?> updateFineChemical(@PathVariable Long id, @RequestBody FineChemicalInventoryVO input) {
-
 		return ResponseEntity.ok(fineChemicalService.updateFineChemical(id, input));
 	}
 

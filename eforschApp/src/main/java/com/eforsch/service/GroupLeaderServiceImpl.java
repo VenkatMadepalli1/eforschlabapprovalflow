@@ -46,6 +46,7 @@ public class GroupLeaderServiceImpl  {
     }
     
     
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public GroupHierarchyResponse getGroupHierarchyByAdmin() {
 
     	List<UserDetails> groupLeaders;

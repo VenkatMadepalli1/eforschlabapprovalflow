@@ -66,6 +66,15 @@ public final class OrderConverter {
      vo.setCreatedBy(e.getCreatedBy());
      vo.setUpdatedBy(e.getUpdatedBy());
      vo.setGroupName(e.getGroupName());
+     vo.setRejectReason(e.getRejectReason());
+     vo.setOrderType(e.getOrderType());
+     vo.setBarcodeInfo(e.getBarcodeInfo());
+     vo.setApplicationOfHazardousSubstance(e.getApplicationOfHazardousSubstance());
+     vo.setConcentrationWorkingVolume(e.getConcentrationWorkingVolume());
+     vo.setLabNoWorkingWithChemical(e.getLabNoWorkingWithChemical());
+     vo.setNumberOfEmployees(e.getNumberOfEmployees());
+     vo.setHandlingDurationGreater15Min(e.getHandlingDurationGreater15Min());
+     vo.setHazardousDueToSkinContact(e.getHazardousDueToSkinContact());
 
      return vo;
  }
@@ -128,6 +137,12 @@ public final class OrderConverter {
      e.setUpdatedBy(vo.getUpdatedBy());
      e.setGroupName(vo.getGroupName());
      e.setProductId(vo.getProductId());
+     e.setApplicationOfHazardousSubstance(vo.getApplicationOfHazardousSubstance());
+     e.setConcentrationWorkingVolume(vo.getConcentrationWorkingVolume());
+     e.setLabNoWorkingWithChemical(vo.getLabNoWorkingWithChemical());
+     e.setNumberOfEmployees(vo.getNumberOfEmployees());
+     e.setHandlingDurationGreater15Min(vo.getHandlingDurationGreater15Min());
+     e.setHazardousDueToSkinContact(vo.getHazardousDueToSkinContact());
 
      return e;
  }

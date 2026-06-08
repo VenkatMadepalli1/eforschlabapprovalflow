@@ -394,6 +394,7 @@ public class FineChemicalService {
 		map.put("createdAt", item.getCreatedAt());
 		map.put("filename", item.getFileName());
 		map.put("filetype", item.getFileType());
+		map.put("fileContent", item.getFileContent() != null ? "Exists" : "None"); // Indicate presence of file content
 		return map;
 	}
 
@@ -440,7 +441,26 @@ public class FineChemicalService {
 			existing.setpPhrases(input.getpPhrases());
 			existing.setSubstitutionCheck(input.getSubstitutionCheck());
 			existing.setStorageLocation(input.getStorageLocation());
+			existing.setApplicationOfHazardousSubstance(input.getApplicationOfHazardousSubstance());
+			existing.setConcentrationWorkingVolume(input.getConcentrationWorkingVolume());
+			existing.setLabNoWorkingWithChemical(input.getLabNoWorkingWithChemical());
+			existing.setNumberOfEmployees(input.getNumberOfEmployees());
+			existing.setHandlingDurationGreater15Min(input.getHandlingDurationGreater15Min());
+			existing.setHazardousDueToSkinContact(input.getHazardousDueToSkinContact());
 			existing.setGroupName(input.getGroupName());
+
+			// Update file attachment only if a new file is provided
+			System.out.println("=== FILE DEBUG ===");
+			System.out.println("fileName: " + input.getFileName());
+			System.out.println("fileType: " + input.getFileType());
+			System.out.println("fileContent null? " + (input.getFileContent() == null));
+			System.out.println("fileContent length: " + (input.getFileContent() != null ? input.getFileContent().length : 0));
+			System.out.println("==================");
+			if (input.getFileContent() != null && input.getFileContent().length > 0) {
+				existing.setFileName(input.getFileName());
+				existing.setFileType(input.getFileType());
+				existing.setFileContent(input.getFileContent());
+			}
 
 			// Do not update createdAt in update
 
@@ -451,9 +471,11 @@ public class FineChemicalService {
 			return Map.of("status", "success", "message", "Product updated successfully", "data", data);
 
 		} catch (SecurityException se) {
+			se.printStackTrace();
 			return Map.of("status", "error", "message", se.getMessage(), "code", 401);
 		} catch (Exception e) {
-			return Map.of("status", "error", "message", "An unexpected error occurred.", "code", 500);
+			e.printStackTrace(); // ✅ Shows real error in STS console
+			return Map.of("status", "error", "message", "Error: " + e.getMessage(), "code", 500);
 		}
 	}
 
@@ -576,6 +598,12 @@ public class FineChemicalService {
 		entity.setSubstitutionCheck(vo.getSubstitutionCheck());
 		entity.setSubstitutionOption(vo.getSubstitutionOption());
 		entity.setStorageLocation(vo.getStorageLocation());
+		entity.setApplicationOfHazardousSubstance(vo.getApplicationOfHazardousSubstance());
+		entity.setConcentrationWorkingVolume(vo.getConcentrationWorkingVolume());
+		entity.setLabNoWorkingWithChemical(vo.getLabNoWorkingWithChemical());
+		entity.setNumberOfEmployees(vo.getNumberOfEmployees());
+		entity.setHandlingDurationGreater15Min(vo.getHandlingDurationGreater15Min());
+		entity.setHazardousDueToSkinContact(vo.getHazardousDueToSkinContact());
 		entity.setGroupName(vo.getGroupName());
 		entity.setQtypriceordered(vo.getQtypriceordered());
 		entity.setPriority(vo.getPriority());
@@ -640,6 +668,12 @@ public class FineChemicalService {
 		vo.setSubstitutionCheck(entity.getSubstitutionCheck());
 		vo.setSubstitutionOption(entity.getSubstitutionOption());
 		vo.setStorageLocation(entity.getStorageLocation());
+		vo.setApplicationOfHazardousSubstance(entity.getApplicationOfHazardousSubstance());
+		vo.setConcentrationWorkingVolume(entity.getConcentrationWorkingVolume());
+		vo.setLabNoWorkingWithChemical(entity.getLabNoWorkingWithChemical());
+		vo.setNumberOfEmployees(entity.getNumberOfEmployees());
+		vo.setHandlingDurationGreater15Min(entity.getHandlingDurationGreater15Min());
+		vo.setHazardousDueToSkinContact(entity.getHazardousDueToSkinContact());
 		vo.setGroupName(entity.getGroupName());
 		vo.setQtypriceordered(entity.getQtypriceordered());
 		vo.setPriority(entity.getPriority());

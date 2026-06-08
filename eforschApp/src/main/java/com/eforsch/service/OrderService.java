@@ -189,10 +189,12 @@ public class OrderService {
     
     public OrderVO rejectAdmin(Long orderId) {
     	Optional<Order> orderOptional = orderRepository.findById(orderId);
-    	
+
 		if (orderOptional.isPresent()) {
 			Order existingOrder = orderOptional.get();
 			existingOrder.setAdminApproved(false);
+			existingOrder.setStatus("rejected");
+			existingOrder.setAdminApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
 			
 			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
@@ -247,12 +249,17 @@ public class OrderService {
 		}
     }
     
-    public OrderVO labReject(Long orderId) {
+    public OrderVO labReject(Long orderId, String rejectReason) {
     	Optional<Order> orderOptional = orderRepository.findById(orderId);
-    	
+
 		if (orderOptional.isPresent()) {
 			Order existingOrder = orderOptional.get();
 			existingOrder.setLabApproved(false);
+			existingOrder.setStatus("rejected");
+			existingOrder.setLabApprovalStatusDate(new java.util.Date());
+			if (rejectReason != null && !rejectReason.isEmpty()) {
+				existingOrder.setRejectReason(rejectReason);
+			}
 			existingOrder = orderRepository.save(existingOrder);
 			
 			

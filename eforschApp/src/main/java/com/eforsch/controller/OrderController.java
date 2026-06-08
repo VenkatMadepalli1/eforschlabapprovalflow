@@ -255,19 +255,23 @@ public class OrderController {
     }
     
     @GetMapping("/delivered/{orderId}")
-    public ResponseEntity<?> getOrdersListByDelivered(@PathVariable Long orderId, 
+    public ResponseEntity<?> getOrdersListByDelivered(@PathVariable Long orderId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "10") int id,
             @RequestParam String email,
             @RequestParam String name,
             @RequestParam String role,
-            @RequestParam(required = false) String groupName) {
+            @RequestParam(required = false) String groupName,
+            @RequestParam(required = false) String orderType,
+            @RequestParam(required = false) String barcodeInfo) {
 
         try {
-        	
+
         	Order modifyOrder = orderService.getOrderById(orderId);
         	modifyOrder.setStatus("delivered");
+        	if (orderType != null) modifyOrder.setOrderType(orderType);
+        	if (barcodeInfo != null) modifyOrder.setBarcodeInfo(barcodeInfo);
         	OrderVO modifyOrderVO = OrderConverter.fromEntityToVO(modifyOrder);
         	orderService.modifyOrder(modifyOrderVO);
         	
@@ -349,8 +353,9 @@ public class OrderController {
     }
     
     @GetMapping("/labReject/{orderId}")
-    public ResponseEntity<?> labReject(@PathVariable Long orderId) {
-        OrderVO createdOrder = orderService.labReject(orderId);
+    public ResponseEntity<?> labReject(@PathVariable Long orderId,
+                                       @RequestParam(required = false) String rejectReason) {
+        OrderVO createdOrder = orderService.labReject(orderId, rejectReason);
         return ResponseEntity.ok(new SuccessResponse("success", "Order is rejected", createdOrder));
     }
     
