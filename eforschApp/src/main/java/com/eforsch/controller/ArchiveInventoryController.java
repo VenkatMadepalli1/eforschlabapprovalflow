@@ -73,7 +73,7 @@ public class ArchiveInventoryController {
 	 }
 
 	 @GetMapping("/archives")
-	 public ResponseEntity<?> getArchivedItems(@RequestParam(required = true) String groupName) {
+	 public ResponseEntity<?> getArchivedItems() {
 
 	     try {
 	         List<ArchiveInventoryVO> archives = archiveInventoryService.getArchivedItemsByYear();

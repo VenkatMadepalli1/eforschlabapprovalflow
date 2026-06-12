@@ -295,6 +295,12 @@ public class FineChemicalService {
 			itemMap.put("substitutioncheck", item.getSubstitutionCheck());
 			itemMap.put("storagelocation", item.getStorageLocation());
 			itemMap.put("substitutionOption", item.getSubstitutionOption());
+			itemMap.put("applicationOfHazardousSubstance", item.getApplicationOfHazardousSubstance());
+			itemMap.put("concentrationWorkingVolume", item.getConcentrationWorkingVolume());
+			itemMap.put("labNoWorkingWithChemical", item.getLabNoWorkingWithChemical());
+			itemMap.put("numberOfEmployees", item.getNumberOfEmployees());
+			itemMap.put("handlingDurationGreater15Min", item.getHandlingDurationGreater15Min());
+			itemMap.put("hazardousDueToSkinContact", item.getHazardousDueToSkinContact());
 			itemMap.put("groupname", item.getGroupName());
 			itemMap.put("createdat", item.getCreatedAt());
 			itemMap.put("price", item.getPrice());
@@ -389,12 +395,18 @@ public class FineChemicalService {
 		map.put("substitutioncheck", item.getSubstitutionCheck()); // Return as object directly
 		map.put("storagelocation", item.getStorageLocation());
 		map.put("substitutionOption", item.getSubstitutionOption());
+		map.put("applicationOfHazardousSubstance", item.getApplicationOfHazardousSubstance());
+		map.put("concentrationWorkingVolume", item.getConcentrationWorkingVolume());
+		map.put("labNoWorkingWithChemical", item.getLabNoWorkingWithChemical());
+		map.put("numberOfEmployees", item.getNumberOfEmployees());
+		map.put("handlingDurationGreater15Min", item.getHandlingDurationGreater15Min());
+		map.put("hazardousDueToSkinContact", item.getHazardousDueToSkinContact());
 		map.put("groupName", item.getGroupName());
 		map.put("price", item.getPrice());
 		map.put("createdAt", item.getCreatedAt());
 		map.put("filename", item.getFileName());
 		map.put("filetype", item.getFileType());
-		map.put("fileContent", item.getFileContent() != null ? "Exists" : "None"); // Indicate presence of file content
+		map.put("fileContent", item.getFileContent() != null ? "Exists" : "None");
 		return map;
 	}
 

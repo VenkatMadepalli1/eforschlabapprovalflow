@@ -36,8 +36,8 @@ public class ArchiveInventory {
     private String concentration;
     @Column(length = 1000)
     private String remarks;
-    private boolean visibleToUsers;
-    
+    private Boolean visibleToUsers;
+
     private double price;
     
     
@@ -46,8 +46,8 @@ public class ArchiveInventory {
 
     @Temporal(TemporalType.DATE)
     private Date expirydate;
-    private String addedby;    
-    private boolean shared;
+    private String addedby;
+    private Boolean shared;
 
 
     @Column(name = "filename", length = 255)
@@ -181,11 +181,11 @@ public class ArchiveInventory {
 		this.addedby = addedby;
 	}
 
-	public boolean isShared() {
+	public Boolean isShared() {
 		return shared;
 	}
 
-	public void setShared(boolean shared) {
+	public void setShared(Boolean shared) {
 		this.shared = shared;
 	}
 
@@ -234,11 +234,11 @@ public class ArchiveInventory {
 		this.archiveId = archiveId;
 	}
 
-	public boolean isVisibleToUsers() {
+	public Boolean isVisibleToUsers() {
 		return visibleToUsers;
 	}
 
-	public void setVisibleToUsers(boolean visibleToUsers) {
+	public void setVisibleToUsers(Boolean visibleToUsers) {
 		this.visibleToUsers = visibleToUsers;
 	}
 

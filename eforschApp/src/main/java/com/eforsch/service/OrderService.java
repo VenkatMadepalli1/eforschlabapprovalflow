@@ -60,13 +60,15 @@ public class OrderService {
 			// Both approvals must be done before PO dept acts
 			paginatedResult = orderRepository.findByAdminApproved(true, PageRequest.of(page - 1, size));
 		}else if(role.equalsIgnoreCase("labMgmt")) {
-			// Lab is the first approver — show all orders not yet lab-approved
-			paginatedResult = orderRepository.findByLabApproved(false, PageRequest.of(page - 1, size));
+			// Lab sees ALL orders: pending ones to approve, approved/rejected ones for status,
+			// and ordered ones so the Delivered button is available
+			paginatedResult = orderRepository.findAll(PageRequest.of(page - 1, size));
 		}else if(role.equalsIgnoreCase("admin")) {
 			paginatedResult = orderRepository.findAll(PageRequest.of(page - 1, size));
 		}else if(groupName != null && !groupName.isEmpty()) {
-			// Group leader is the second approver — show only lab-approved orders for their group
-			paginatedResult = orderRepository.findByGroupNameAndLabApproved(groupName, true, PageRequest.of(page - 1, size));
+			// Scientists and group leaders get all of their group's orders;
+			// the frontend hides not-yet-lab-approved orders from the group leader
+			paginatedResult = orderRepository.findByGroupName(groupName, PageRequest.of(page - 1, size));
 		}else {
 			paginatedResult = orderRepository.findAll(PageRequest.of(page - 1, size));
 		}
@@ -138,6 +140,19 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
     }
 
+    // Orders created outside the normal add-order flow (e.g. re-ordered from existing
+    // inventory) may have no notification row; create one instead of failing the approval
+    private NotificationEntity getOrCreateNotification(Long orderId, Order order) {
+        return notificationRepository.findByEntityId(orderId).orElseGet(() -> {
+            NotificationEntity n = new NotificationEntity();
+            n.setEntityId(orderId);
+            n.setEntityType("Order");
+            n.setGroupName(order.getGroupName());
+            n.setCreatedAt(System.currentTimeMillis());
+            return n;
+        });
+    }
+
     public OrderVO addOrder(OrderVO orderVO) {
         Order newOrder = OrderConverter.fromVOToEntity(orderVO, new Order());
         newOrder = orderRepository.save(newOrder);
@@ -160,27 +175,21 @@ public class OrderService {
     
     public OrderVO approveAdmin(Long orderId) {
     	Optional<Order> orderOptional = orderRepository.findById(orderId);
-    	
+
 		if (orderOptional.isPresent()) {
 			Order existingOrder = orderOptional.get();
 			existingOrder.setAdminApproved(true);
 			existingOrder.setAdminApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been approved by Group Leader. Ready for purchase processing.");
-			    notificationEntity.setTitle("Order Approved - Ready for PO");
-			    notificationEntity.setType("approval_pending");
-			    notificationEntity.setRole("podept"); // Group leader is last approver, notify PO dept
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been approved by Group Leader. Ready for purchase processing.");
+			notificationEntity.setTitle("Order Approved - Ready for PO");
+			notificationEntity.setType("approval_pending");
+			notificationEntity.setRole("podept");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -196,24 +205,15 @@ public class OrderService {
 			existingOrder.setStatus("rejected");
 			existingOrder.setAdminApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been rejected by Group Leader.");
-			    notificationEntity.setTitle("Order Rejected by Group Leader");
-			    notificationEntity.setType("rejected");
-			    notificationEntity.setRole("labMgmt"); // Notify scientist's group that the order was rejected by lab
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
-			
-			
-			
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been rejected by Group Leader.");
+			notificationEntity.setTitle("Order Rejected by Group Leader");
+			notificationEntity.setType("rejected");
+			notificationEntity.setRole("labMgmt");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -222,27 +222,21 @@ public class OrderService {
     
     public OrderVO labApprove(Long orderId) {
     	Optional<Order> orderOptional = orderRepository.findById(orderId);
-    	
+
 		if (orderOptional.isPresent()) {
 			Order existingOrder = orderOptional.get();
 			existingOrder.setLabApproved(true);
 			existingOrder.setLabApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been approved by Lab Management. Now requires Group Leader approval.");
-			    notificationEntity.setTitle("Pending Group Leader Approval");
-			    notificationEntity.setType("approved");
-			    notificationEntity.setRole("groupleader"); // Lab is first approver, notify group leader next
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been approved by Lab Management. Now requires Group Leader approval.");
+			notificationEntity.setTitle("Pending Group Leader Approval");
+			notificationEntity.setType("approved");
+			notificationEntity.setRole("groupleader");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -261,22 +255,15 @@ public class OrderService {
 				existingOrder.setRejectReason(rejectReason);
 			}
 			existingOrder = orderRepository.save(existingOrder);
-			
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been rejected by Lab Management.");
-			    notificationEntity.setTitle("Lab Rejected");
-			    notificationEntity.setType("rejected");
-			    notificationEntity.setRole("groupleader"); // Notify scientist's group that the order was rejected by lab
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been rejected by Lab Management.");
+			notificationEntity.setTitle("Lab Rejected");
+			notificationEntity.setType("rejected");
+			notificationEntity.setRole("groupleader");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
