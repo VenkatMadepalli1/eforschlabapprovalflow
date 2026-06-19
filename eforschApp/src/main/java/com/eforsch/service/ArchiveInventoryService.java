@@ -80,8 +80,7 @@ public class ArchiveInventoryService {
                 setIfNotBlank(ar::setFileName, inv.getFileName());
                 setIfNotBlank(ar::setFileType, inv.getFileType());
                 setIfNotEmpty(ar::setFileContent, inv.getFileContent());
-                ar.setVisibleToUsers(true);
-
+               
                 ar = archiveInventoryRepo.save(ar);
                 
                 ArchiveInventoryVO archiveInventoryVO = new ArchiveInventoryVO();
@@ -134,8 +133,6 @@ public class ArchiveInventoryService {
                 dest.setFileType(src.getFileType());
                 dest.setFileContent(src.getFileContent());
                 dest.setGroupName(group);
-                dest.setVisibleToUsers(true);
-
                 dest = archiveFineChemicalRepo.save(dest);
                 
                 ArchiveInventoryVO archiveVO = new ArchiveInventoryVO();

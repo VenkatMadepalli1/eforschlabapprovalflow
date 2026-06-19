@@ -25,7 +25,7 @@ public class ArchiveFineChemicalInventory {
     private String sapMaterialNo;
     private String wvsubqty;
     private String budgetno;
-    private Boolean visibleToUsers;
+    private boolean visibleToUsers;
 
     @Temporal(TemporalType.DATE)
     private Date orderdate;
@@ -63,7 +63,7 @@ public class ArchiveFineChemicalInventory {
     private double price;
     
     
-    private Boolean shared;
+    private boolean shared;
     @Column(name = "filename", length = 255)
     private String fileName;
 
@@ -76,11 +76,11 @@ public class ArchiveFineChemicalInventory {
     private byte[] fileContent;
 
 
-	public Boolean isShared() {
+	public boolean isShared() {
 		return shared;
 	}
 
-	public void setShared(Boolean shared) {
+	public void setShared(boolean shared) {
 		this.shared = shared;
 	}
 
@@ -373,11 +373,11 @@ public class ArchiveFineChemicalInventory {
 		this.archiveId = archiveId;
 	}
 
-	public Boolean isVisibleToUsers() {
+	public boolean isVisibleToUsers() {
 		return visibleToUsers;
 	}
 
-	public void setVisibleToUsers(Boolean visibleToUsers) {
+	public void setVisibleToUsers(boolean visibleToUsers) {
 		this.visibleToUsers = visibleToUsers;
 	}
 	
