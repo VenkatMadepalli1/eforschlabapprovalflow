@@ -396,8 +396,11 @@ const openProductDetails = (row: any) => {
 
     console.log("Submitting Form (raw):", formData);
 
-    // ✅ Extract file object (if present)
-    const fileObj = formData.attachment || null;
+    // ✅ Extract file object (ReusableForm stores files as File[])
+    const rawAttachment = formData.attachment;
+    const fileObj: File | null = Array.isArray(rawAttachment) && rawAttachment.length > 0
+      ? rawAttachment[0]
+      : rawAttachment instanceof File ? rawAttachment : null;
     delete formData.attachment;
 
     // ✅ Build FormData for multipart request

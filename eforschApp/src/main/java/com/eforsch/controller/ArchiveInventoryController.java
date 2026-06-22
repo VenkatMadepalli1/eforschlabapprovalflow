@@ -72,9 +72,17 @@ public class ArchiveInventoryController {
 	     }
 	 }
 
-	 @GetMapping("/archives")
-	 public ResponseEntity<?> getArchivedItems(@RequestParam(required = true) String groupName) {
+	 @PostMapping("/archives")
+	 public ResponseEntity<?> getArchivedItemsPost(@RequestBody(required = false) User user) {
+	     return getArchivedItemsInternal(user != null ? user.getGroupName() : null);
+	 }
 
+	 @GetMapping("/archives")
+	 public ResponseEntity<?> getArchivedItems(@RequestParam(required = false) String groupName) {
+	     return getArchivedItemsInternal(groupName);
+	 }
+
+	 private ResponseEntity<?> getArchivedItemsInternal(String groupName) {
 	     try {
 	         List<ArchiveInventoryVO> archives = archiveInventoryService.getArchivedItemsByYear();
 	         

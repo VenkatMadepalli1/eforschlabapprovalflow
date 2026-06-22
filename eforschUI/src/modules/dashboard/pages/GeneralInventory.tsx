@@ -334,8 +334,11 @@ const handleFormSubmit = async (formValues: Record<string, any>) => {
       formValues.role = userRole.role;
     }
 
-    // ✅ Extract file
-    const file = formValues.attachment || null;
+    // ✅ Extract file (ReusableForm stores files as File[])
+    const rawAttachment = formValues.attachment;
+    const file: File | null = Array.isArray(rawAttachment) && rawAttachment.length > 0
+      ? rawAttachment[0]
+      : rawAttachment instanceof File ? rawAttachment : null;
 
     // ✅ Remove from object
     delete formValues.attachment;
