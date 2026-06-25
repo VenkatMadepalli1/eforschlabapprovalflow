@@ -53,6 +53,8 @@ public class FineChemicalInventory {
     private String substitutionCheck;
     private String substitutionOption;
     private String storageLocation;
+    private String orderType;
+    private String barcodeInfo;
     private String applicationOfHazardousSubstance;
     private String concentrationWorkingVolume;
     private String labNoWorkingWithChemical;
@@ -61,6 +63,8 @@ public class FineChemicalInventory {
     private String hazardousDueToSkinContact;
     private String groupName;
     private String qtypriceordered;
+    @Column(unique = true)
+    private Long sourceOrderId;
     private String priority;
     private String received;
     private Date createdAt;
@@ -320,6 +324,12 @@ public class FineChemicalInventory {
 		this.storageLocation = storageLocation;
 	}
 
+	public String getOrderType() { return orderType; }
+	public void setOrderType(String orderType) { this.orderType = orderType; }
+
+	public String getBarcodeInfo() { return barcodeInfo; }
+	public void setBarcodeInfo(String barcodeInfo) { this.barcodeInfo = barcodeInfo; }
+
 	public String getApplicationOfHazardousSubstance() { return applicationOfHazardousSubstance; }
 	public void setApplicationOfHazardousSubstance(String v) { this.applicationOfHazardousSubstance = v; }
 
@@ -344,6 +354,14 @@ public class FineChemicalInventory {
 
 	public void setGroupName(String groupName) {
 		this.groupName = groupName;
+	}
+
+	public Long getSourceOrderId() {
+		return sourceOrderId;
+	}
+
+	public void setSourceOrderId(Long sourceOrderId) {
+		this.sourceOrderId = sourceOrderId;
 	}
 
 	public String getQtypriceordered() {

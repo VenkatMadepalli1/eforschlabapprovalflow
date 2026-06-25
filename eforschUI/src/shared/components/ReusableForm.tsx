@@ -13,6 +13,7 @@ type FormField = {
   multiple?: boolean;
   accept?: string;
   maxFiles?: number;
+  helpText?: string;
 
   validation?: {
     required?: boolean;
@@ -35,6 +36,7 @@ type FormProps = {
   onSubmit: (formData: Record<string, any>) => void;
   disabled?: boolean;
   onFieldChange?: (id: string, value: any) => Partial<Record<string, any>> | void;
+  existingFileNames?: Record<string, string>;
 };
 
 const ReusableForm: React.FC<FormProps> = ({
@@ -43,9 +45,11 @@ const ReusableForm: React.FC<FormProps> = ({
   onSubmit,
   disabled = false,
   onFieldChange,
+  existingFileNames = {},
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [removedFiles, setRemovedFiles] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setFormData(initialValues);
@@ -97,6 +101,8 @@ const ReusableForm: React.FC<FormProps> = ({
     e.preventDefault();
     if (disabled) return;
 
+    console.log("🔍 ReusableForm submit - full formData:", JSON.stringify(formData, null, 2));
+
     const newErrors: Record<string, string> = {};
 
     formConfig.forEach(({ id, validation, showIf }) => {
@@ -114,7 +120,7 @@ const ReusableForm: React.FC<FormProps> = ({
       return;
     }
 
-    await onSubmit(formData);
+    await onSubmit({ ...formData, _removedFiles: removedFiles });
   };
 
   return (
@@ -138,6 +144,15 @@ const ReusableForm: React.FC<FormProps> = ({
                   {field.maxFiles || 5})
                 </label>
 
+                {field.helpText && (
+                  <div
+                    className="fw-bold mb-2"
+                    style={{ color: "#0d6efd" }}
+                  >
+                    {field.helpText}
+                  </div>
+                )}
+
                 <input
                   key={formData[field.id]?.length} // ✅ reset input
                   type="file"
@@ -159,6 +174,25 @@ const ReusableForm: React.FC<FormProps> = ({
                     handleFileChange(files, field);
                   }}
                 />
+
+                {/* ✅ EXISTING SERVER FILE */}
+                {existingFileNames[field.id] && !formData[field.id]?.length && !removedFiles[field.id] && (
+                  <div className="mt-2 d-flex align-items-center gap-2">
+                    <span className="text-muted" style={{ fontSize: "0.85rem" }}>Current file:</span>
+                    <span className="text-primary fw-semibold" style={{ fontSize: "0.85rem" }}>{existingFileNames[field.id]}</span>
+                    {!disabled && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        style={{ fontSize: "0.75rem", padding: "1px 6px" }}
+                        onClick={() => setRemovedFiles(prev => ({ ...prev, [field.id]: true }))}
+                        title="Remove current file"
+                      >
+                        ✕ Remove
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* ✅ FILE LIST */}
                 {formData[field.id]?.length > 0 && (

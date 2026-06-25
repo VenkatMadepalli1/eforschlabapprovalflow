@@ -60,6 +60,7 @@ public class InventoryMapper {
         vo.setAddedby(entity.getAddedby());
         vo.setShared(entity.isShared());
         vo.setPrice(entity.getPrice());
+        vo.setSourceOrderId(entity.getSourceOrderId());
 
         vo.setFileName(entity.getFileName());
         vo.setFileType(entity.getFileType());

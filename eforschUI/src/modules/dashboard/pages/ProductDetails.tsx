@@ -2,7 +2,7 @@ import { Button } from "react-bootstrap";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Modal from "../../../shared/components/Modal";
 // import addOrderFormConfig from "../../../shared/config/addOrderFormConfig";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 // import addProductFormConfig from "../../../shared/config/addProductFormConfig";
 import useAppDispatch from "../../../shared/hooks/useAppDispatch";
 import { useAppSelector } from "../../../shared/hooks/customHooks";
@@ -15,7 +15,8 @@ import {  addOrder,
   shareProduct,
   getProfile,
   getCompanies,
-  downloadPDFInv, } from "../dashboardSlice";
+  downloadPDFInv,
+  uploadInventoryFile, } from "../dashboardSlice";
 import addOrderProdFormConfig from "../../../shared/config/addOrderProdFormConfig";
 import updateProductFormGenInvConfig from "../../../shared/config/updateProductFormGenInvConfig.";
 import sharingRequestFormConfig from "../../../shared/config/sharingRequestFormConfig";
@@ -82,17 +83,14 @@ const [shareInitialValues] =
     // groupName: product.groupName || userRole.groupName || "",
     companyinternalno: product.companyinternalno || "",
     sapmaterialno: product.sapmaterialno || "",
-    weightvolsubqty: product.weightvolsubqty || "",
+    weightvolsubqty: product.weightvolsubqty || product.wvsubqty || "",
     budgetno: product.budgetno ? `${product.budgetno}` : "",
     concentration: product.concentration || "",
     remarks: product.remarks || "",
     orderdate: product.orderdate || "",
     expirydate: product.expirydate || "",
     addedby: product.addedby || userRole.name,
-    // shared: product.shared ?? false,
-    // fileName: product.fileName || null,
-    // fileType: product.fileType || null,
-    // fileContent: product.fileContent || null,
+    orderedby: userRole?.name || "",
 
     // ✅ Extra order-related fields
     price: product.price || 0,
@@ -460,38 +458,36 @@ const handleShareSubmit = async (
   const handleUpdate = () => setIsProductModalOpen(true);
 
   const handleOrderSubmit: (formData: Record<string, any>) => Promise<void> = async (formData) => {
-    // Ensure productId is set correctly
-    formData.productId = product?.productId ?? 0;
-    formData.addedby = userRole.name;       // ✅ Logged-in user name
-    formData.groupName = userRole.groupName; // ✅ User’s group
-    formData.role = userRole.role;
-
-    const rawAttachment = formData.attachment;
-    const fileObj: File | null = Array.isArray(rawAttachment) && rawAttachment.length > 0
-      ? rawAttachment[0]
-      : rawAttachment instanceof File ? rawAttachment : null;
-    delete formData.attachment;
-
     try {
+      formData.productId = product?.productId ?? 0;
+      formData.addedby = userRole.name;
+      formData.groupName = userRole.groupName;
+      formData.role = userRole.role;
+
+      const rawAttachment = formData.attachment;
+      const fileObj: File | null = Array.isArray(rawAttachment) && rawAttachment.length > 0
+        ? rawAttachment[0]
+        : rawAttachment instanceof File ? rawAttachment : null;
+      delete formData.attachment;
+
       const orderData = mapProductToOrder(formData, userRole);
+      console.log("📦 orderData:", JSON.stringify(orderData));
+      console.log("📎 fileObj:", fileObj);
 
       const payload = new FormData();
-
-      payload.append("order", JSON.stringify(orderData));  
-
-      console.log("🚀 Final payload to addOrder:", payload);
-
+      payload.append("order", JSON.stringify(orderData));
       if (fileObj) {
-        payload.append("file", fileObj, fileObj.name); // attach file if present
+        payload.append("file", fileObj, fileObj.name);
       }
 
       await dispatch(addOrder(payload)).unwrap();
       alert("Order placed successfully!");
       setIsModalOpen(false);
       navigate(`/orders`);
-    } catch (error) {
-      console.error("Order submission failed:", error);
-      alert("Failed to place order.");
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || String(error);
+      console.error("Order submission failed:", msg, error);
+      alert("Failed to place order: " + msg);
     }
   };
 
@@ -504,31 +500,29 @@ const handleProductSubmit = async (formData: Record<string, any>) => {
     formData.addedby = userRole.name;
     formData.groupName = userRole.groupName;
 
-    // ✅ Convert and normalize payload
-    const finalPayload = mapToModifyApiPayload(formData);
+    // ReusableForm stores files as File[] — extract the first element
+    const rawAttachment = formData.attachment;
+    const attachmentFile: File | null =
+      Array.isArray(rawAttachment) && rawAttachment.length > 0 ? rawAttachment[0] :
+      rawAttachment instanceof File ? rawAttachment : null;
 
-    // ✅ Convert File to base64 if attachment exists
-    if (formData.attachment instanceof File) {
-      const file = formData.attachment;
-      const base64String = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      finalPayload.fileContent = [base64String];
-      finalPayload.fileName = file.name;
-      finalPayload.fileType = file.type;
+    delete formData.attachment;
+
+    // ✅ Update product metadata (JSON — no file)
+    const finalPayload = mapToModifyApiPayload(formData);
+    await dispatch(editProduct(finalPayload)).unwrap();
+
+    // ✅ Upload file separately via the dedicated endpoint if provided
+    if (attachmentFile) {
+      const fileFormData = new FormData();
+      fileFormData.append("file", attachmentFile, attachmentFile.name);
+      await dispatch(uploadInventoryFile({
+        id: product?.productId ?? Number(id),
+        formData: fileFormData,
+      })).unwrap();
     }
 
-    console.log("🚀 Final payload to editProduct:", finalPayload);
-
-    // ✅ Dispatch API call
-    const updated = await dispatch(editProduct(finalPayload)).unwrap();
-
-    // ✅ Update UI
-    setProduct(mapProductToOrder(updated.data, userRole));
-    fetchData(); // Refresh data
+    fetchData();
     setIsProductModalOpen(false);
     alert("Product updated successfully!");
   } catch (error) {
@@ -581,6 +575,16 @@ const handleProductSubmit = async (formData: Record<string, any>) => {
     console.log("ProductDetails - getValue - result:", result);
     return result;
   };
+
+  // Ensure the product's own company always appears as an option even before the companies list loads
+  const effectiveCompanyOptions = useMemo(() => {
+    const base = companyOptions.length > 0 ? companyOptions : [];
+    const productCompany = order?.companyname;
+    if (productCompany && !base.some(opt => opt.key === productCompany)) {
+      return [{ label: productCompany, key: productCompany }, ...base];
+    }
+    return base;
+  }, [companyOptions, order]);
 
   return (
     <>
@@ -648,7 +652,7 @@ const handleProductSubmit = async (formData: Record<string, any>) => {
                     <span className="pd-value pd-badge">{getValue(product.quantity)}</span>
                   </div>
                   <div className="pd-field">
-                    <span className="pd-label">Weight / Vol Sub QTY</span>
+                    <span className="pd-label">Weight / Vol / Sub QTY</span>
                     <span className="pd-value">{getValue(product.weightvolsubqty)}</span>
                   </div>
                   <div className="pd-field">
@@ -659,16 +663,10 @@ const handleProductSubmit = async (formData: Record<string, any>) => {
                     <span className="pd-label">SAP Material No</span>
                     <span className="pd-value">{getValue(product.sapmaterialno)}</span>
                   </div>
-                  {product.orderType && (
+                  {product.sourceOrderId && (
                     <div className="pd-field">
-                      <span className="pd-label">Order Type</span>
-                      <span className="pd-value pd-badge">{product.orderType}</span>
-                    </div>
-                  )}
-                  {product.barcodeInfo && (
-                    <div className="pd-field">
-                      <span className="pd-label">Barcode Info</span>
-                      <span className="pd-value">{product.barcodeInfo}</span>
+                      <span className="pd-label">Source Order ID</span>
+                      <span className="pd-value">{product.sourceOrderId}</span>
                     </div>
                   )}
                 </div>
@@ -755,7 +753,7 @@ const handleProductSubmit = async (formData: Record<string, any>) => {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Order">
         <ReusableForm
-          formConfig={addOrderProdFormConfig(budget || [], companyOptions)}
+          formConfig={addOrderProdFormConfig(budget || [], effectiveCompanyOptions)}
           initialValues={order || {}}
           onSubmit={handleOrderSubmit}
           onFieldChange={handleCompanyFieldChange}

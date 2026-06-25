@@ -137,6 +137,8 @@ public final class OrderConverter {
      e.setUpdatedBy(vo.getUpdatedBy());
      e.setGroupName(vo.getGroupName());
      e.setProductId(vo.getProductId());
+     e.setOrderType(vo.getOrderType());
+     e.setBarcodeInfo(vo.getBarcodeInfo());
      e.setApplicationOfHazardousSubstance(vo.getApplicationOfHazardousSubstance());
      e.setConcentrationWorkingVolume(vo.getConcentrationWorkingVolume());
      e.setLabNoWorkingWithChemical(vo.getLabNoWorkingWithChemical());

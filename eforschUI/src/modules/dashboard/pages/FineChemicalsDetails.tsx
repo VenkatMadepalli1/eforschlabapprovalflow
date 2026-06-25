@@ -84,6 +84,12 @@ const FineChemicalsDetails = () => {
       substitutioncheck: "substitutionCheck",
       substitutionoption: "substitutionOption",
       storagelocation: "storageLocation",
+      applicationofhazardoussubstance: "applicationOfHazardousSubstance",
+      concentrationworkingvolume: "concentrationWorkingVolume",
+      labnoworkingwithchemical: "labNoWorkingWithChemical",
+      numberofemployees: "numberOfEmployees",
+      handlingdurationgreater15min: "handlingDurationGreater15Min",
+      hazardousduetoskincontact: "hazardousDueToSkinContact",
       groupname: "groupName",
       filename: "filename",
       filetype: "filetype",
@@ -151,8 +157,6 @@ const FineChemicalsDetails = () => {
     createdBy: userRole?.name || "",
     updatedBy: userRole?.name || "",
     role: userRole?.role || "",
-    orderType: product.orderType || "",
-    barcodeInfo: product.barcodeInfo || "",
   });
 
   function mapToModifyApiPayload(product: any): any {
@@ -195,6 +199,12 @@ const FineChemicalsDetails = () => {
       substitutionCheck: product.substitutionCheck || "",
       substitutionOption: product.substitutionOption || "",
       storageLocation: product.storageLocation || "",
+      applicationOfHazardousSubstance: product.applicationOfHazardousSubstance || "",
+      concentrationWorkingVolume: product.concentrationWorkingVolume || "",
+      labNoWorkingWithChemical: product.labNoWorkingWithChemical || "",
+      numberOfEmployees: product.numberOfEmployees || "",
+      handlingDurationGreater15Min: product.handlingDurationGreater15Min || "",
+      hazardousDueToSkinContact: product.hazardousDueToSkinContact || "",
       priority: product.priority || "Normal",
       received: product.received || "Pending",
       catalogue: product.catalogue || "",
@@ -499,20 +509,28 @@ const FineChemicalsDetails = () => {
       formData.role = userRole.role;
 
       try {
+        const rawAttachment = formData.attachment;
+        const fileObj: File | null =
+          Array.isArray(rawAttachment) && rawAttachment.length > 0 ? rawAttachment[0] :
+          rawAttachment instanceof File ? rawAttachment : null;
+        delete formData.attachment;
+
         const orderData = mapFineProductToOrder(formData, userRole);
         const payload = new FormData();
         payload.append("order", JSON.stringify(orderData));
 
-        if (formData.attachment) {
-          payload.append("file", formData.attachment, formData.attachment.name);
+        if (fileObj) {
+          payload.append("file", fileObj, fileObj.name);
         }
 
         await dispatch(addFineChemicalOrder(payload)).unwrap();
         alert("Order placed successfully!");
         setIsModalOpen(false);
         navigate(`/orders`);
-      } catch (error) {
-        alert("Failed to place order.");
+      } catch (error: any) {
+        const msg = error?.response?.data?.message || error?.message || String(error);
+        console.error("Fine chemical order failed:", msg, error);
+        alert("Failed to place order: " + msg);
       }
     },
     [product, userRole, dispatch, navigate]
@@ -520,6 +538,8 @@ const FineChemicalsDetails = () => {
 
   const handleUpdateSubmit = async (formData: any) => {
     try {
+      const removedFiles: Record<string, boolean> = formData._removedFiles || {};
+
       // ReusableForm stores files as File[] array — extract first file
       const attachmentFile: File | null =
         formData.attachment instanceof File ? formData.attachment :
@@ -534,11 +554,16 @@ const FineChemicalsDetails = () => {
         hazardousSubstance: rawPayload.hazardousSubstance === "Yes" ? true : rawPayload.hazardousSubstance === "No" ? false : rawPayload.hazardousSubstance,
         cmrSubstance:       rawPayload.cmrSubstance       === "Yes" ? true : rawPayload.cmrSubstance       === "No" ? false : rawPayload.cmrSubstance,
         skinResorptive:     rawPayload.skinResorptive     === "Yes" ? true : rawPayload.skinResorptive     === "No" ? false : rawPayload.skinResorptive,
-        fileContent: null,  // will be set below if file exists
+        fileContent: null,
       };
 
-      // If file selected — convert to Base64 and include in JSON payload
-      if (attachmentFile) {
+      if (removedFiles["attachment"]) {
+        // User clicked ✕ Remove — clear file fields on backend
+        cleanPayload.fileName    = null;
+        cleanPayload.fileType    = null;
+        cleanPayload.fileContent = null;
+      } else if (attachmentFile) {
+        // New file selected — convert to Base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload  = () => resolve((reader.result as string).split(",")[1]);
@@ -547,12 +572,15 @@ const FineChemicalsDetails = () => {
         });
         cleanPayload.fileName    = attachmentFile.name;
         cleanPayload.fileType    = attachmentFile.type;
-        cleanPayload.fileContent = base64;   // backend setFileContent(Object) decodes Base64 → byte[]
+        cleanPayload.fileContent = base64;
       }
+      // else: no change to attachment — backend keeps existing file
 
       const updated = await dispatch(editFineChemicals(cleanPayload)).unwrap();
-      setProduct(normalizeKeysToFormIds(updated.data));
-      fetchData();
+      // Use the response directly — avoids a second round-trip and any race condition
+      const normalizedFromResponse = normalizeKeysToFormIds(updated.data);
+      setProduct(normalizedFromResponse);
+      setupdateProd(mapToModifyApiPayload(normalizedFromResponse));
       setIsProductModalOpen(false);
       alert("Product updated successfully!");
     } catch (error) {
@@ -669,7 +697,7 @@ const FineChemicalsDetails = () => {
                     <span className="pd-value pd-badge">{getValue(product.quantity)}</span>
                   </div>
                   <div className="pd-field">
-                    <span className="pd-label">Weight / Vol Sub QTY</span>
+                    <span className="pd-label">Weight / Vol / Sub QTY</span>
                     <span className="pd-value">{getValue(product.wvsubqty)}</span>
                   </div>
                   <div className="pd-field">
@@ -680,16 +708,10 @@ const FineChemicalsDetails = () => {
                     <span className="pd-label">SAP Material No</span>
                     <span className="pd-value">{getValue(product.sapMaterialNo)}</span>
                   </div>
-                  {product.orderType && (
+                  {product.sourceOrderId && (
                     <div className="pd-field">
-                      <span className="pd-label">Order Type</span>
-                      <span className="pd-value pd-badge">{product.orderType}</span>
-                    </div>
-                  )}
-                  {product.barcodeInfo && (
-                    <div className="pd-field">
-                      <span className="pd-label">Barcode Info</span>
-                      <span className="pd-value">{product.barcodeInfo}</span>
+                      <span className="pd-label">Source Order ID</span>
+                      <span className="pd-value">{product.sourceOrderId}</span>
                     </div>
                   )}
                 </div>
@@ -835,6 +857,36 @@ const FineChemicalsDetails = () => {
                 </div>
               </div>
 
+              {/* Delivery Info — only shown when populated from a delivered order */}
+              {(product.storageLocation || product.orderType || product.barcodeInfo) && (
+                <div className="pd-card pd-card-full">
+                  <div className="pd-card-header">
+                    <i className="fa fa-truck pd-card-icon" />
+                    <span>Delivery Info</span>
+                  </div>
+                  <div className="pd-fields">
+                    {product.storageLocation && (
+                      <div className="pd-field">
+                        <span className="pd-label">Storage Location</span>
+                        <span className="pd-value">{product.storageLocation}</span>
+                      </div>
+                    )}
+                    {product.orderType && (
+                      <div className="pd-field">
+                        <span className="pd-label">Order Type</span>
+                        <span className="pd-value" style={{ textTransform: "capitalize" }}>{product.orderType}</span>
+                      </div>
+                    )}
+                    {product.barcodeInfo && (
+                      <div className="pd-field">
+                        <span className="pd-label">Barcode Info</span>
+                        <span className="pd-value">{product.barcodeInfo}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Attachment — full width */}
               <div className="pd-card pd-card-full">
                 <div className="pd-card-header">
@@ -865,19 +917,20 @@ const FineChemicalsDetails = () => {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Fine Chemical Product Order">
         <ReusableForm
-          formConfig={addOrderFineChemicalFormConfig(budget || [], companyOptions, storageLocationOptions)}
+          formConfig={addOrderFineChemicalFormConfig(budget || [], companyOptions, storageLocationOptions, hPhraseOptions, pPhraseOptions)}
           initialValues={order || {}}
           onSubmit={handleOrderSubmit}
           onFieldChange={handleCompanyFieldChange}
         />
       </Modal>
 
-      <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="Update Fine Chemical Product">
+      <Modal isOpen={isProductModalOpen} onClose={() => { setIsProductModalOpen(false); }} title="Update Fine Chemical Product">
         <ReusableForm
           formConfig={updateProductFormConfig(budget || [], companyOptions, storageLocationOptions, hPhraseOptions, pPhraseOptions)}
           initialValues={updateProd || {}}
           onSubmit={handleUpdateSubmit}
           onFieldChange={handleCompanyFieldChange}
+          existingFileNames={product?.filename ? { attachment: product.filename } : product?.fileName ? { attachment: product.fileName } : {}}
         />
       </Modal>
 

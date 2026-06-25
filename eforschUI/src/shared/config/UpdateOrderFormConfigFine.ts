@@ -48,7 +48,7 @@ const UpdateOrderFormConfigFine = (
   },
   {
     id: "weightvolsubqty",
-    label: "Weight / Volume / Sub Qty",
+    label: "Weight / Vol / Sub QTY",
     type: "text",
     validation: { required: true },
   },
@@ -201,24 +201,17 @@ const UpdateOrderFormConfigFine = (
   // },
   {
     id: "attachment",
-    label: "Attachment",
+    label: "Please upload SDS in DE and/or EN here",
     type: "file",
+    helpText: "Please upload SDS in DE and/or EN here. Save the pdf with the name “CAS No_name_company_language_year”",
     validation: { required: false },
   },
-  {
-    id: "orderType",
-    label: "Order Type (Bulk / Non-Bulk)",
-    type: "radio",
-    options: ["bulk", "nonbulk"],
-    validation: { required: false },
-  },
-  {
-    id: "barcodeInfo",
-    label: "Barcode Info",
-    type: "text",
-    validation: { required: false },
-    showIf: { field: "orderType", value: "nonbulk" },
-  },
+  // {
+  //   id: "safetydatasheet",
+  //   label: "Safety Data Sheet (SDS)",
+  //   type: "file",
+  //   validation: { required: false },
+  // },
 ];
 
 export default UpdateOrderFormConfigFine;

@@ -2,6 +2,8 @@ const addOrderFineChemicalFormConfig = (
   budgetOptions: string[],
   companyOptions: { label: string; key: string }[] = [],
   storageLocationOptions: string[] = [],
+  hPhraseOptions: { label: string; key: string }[] = [],
+  pPhraseOptions: { label: string; key: string }[] = [],
 ) => [
     {
         id: "productname",
@@ -43,15 +45,15 @@ const addOrderFineChemicalFormConfig = (
         type: "text",
         validation: { required: false },
     },
-    //{
-    //    id: "sapMaterialNo",
-    //    label: "SAP Material No",
-    //    type: "text", // changed to text to accept alphanumeric
-    //    validation: { required: true },
-    //},
+    {
+        id: "sapMaterialNo",
+        label: "SAP Material No",
+        type: "text", // changed to text to accept alphanumeric
+        validation: { required: false },
+    },
     {
         id: "weightvolsubqty",
-        label: "packaging unit",
+        label: "Weight / Vol / Sub QTY",
         type: "text",
         validation: { required: true },
     },
@@ -78,7 +80,7 @@ const addOrderFineChemicalFormConfig = (
         id: "concentration",
         label: "Concentration",
         type: "text",
-        validation: { required: true },
+        validation: { required: false },
     },
     {
         id: "price",
@@ -138,14 +140,16 @@ const addOrderFineChemicalFormConfig = (
     },
     {
         id: "hPhrases",
-        label: "H-Phrases (e.g. +H332)",
-        type: "text",
+        label: "H-Phrases",
+        type: "typeahead",
+        options: hPhraseOptions,
         validation: { required: true },
     },
     {
         id: "pPhrases",
-        label: "P-Phrases (e.g. +P332)",
-        type: "text",
+        label: "P-Phrases",
+        type: "typeahead",
+        options: pPhraseOptions,
         validation: { required: true },
     },
     {
@@ -229,8 +233,9 @@ const addOrderFineChemicalFormConfig = (
     },
     {
         id: "attachment",
-        label: "Attachment",
+        label: "Please upload SDS in DE and/or EN here. Save the pdf with the name “CAS No_name_company_language_year”",
         type: "file",
+       // helpText: "Please upload SDS in DE and/or EN here. Save the pdf with the name “CAS No_name_company_language_year”",
         validation: { required: false },
     },
     // {
@@ -263,20 +268,6 @@ const addOrderFineChemicalFormConfig = (
     //     type: "text",
     //     validation: { required: true },
     // }
-    {
-      id: "orderType",
-      label: "Order Type (Bulk / Non-Bulk)",
-      type: "radio",
-      options: ["bulk", "nonbulk"],
-      validation: { required: false },
-    },
-    {
-      id: "barcodeInfo",
-      label: "Barcode Info",
-      type: "text",
-      validation: { required: false },
-      showIf: { field: "orderType", value: "nonbulk" },
-    },
 ];
 
 export default addOrderFineChemicalFormConfig;

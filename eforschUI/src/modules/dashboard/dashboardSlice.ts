@@ -146,29 +146,59 @@ export const orderedPOD = createThunk(
 
 export const deliveredPOD = createThunk(
   "dashboard/delivered",
-  ({ id, user, deliveryStorageLocation, orderType, barcodeInfo }: {
+  ({ id, user, orderType, barcodeInfo, storageLocation }: {
     id: number;
     user: { email: string; name: string; role: string; groupName: string };
     orderType?: string;
     barcodeInfo?: string;
+    storageLocation?: string;
   }) => {
-    const params = new URLSearchParams({
-      page: "1", size: "10000", id: "10",
-      email: user.email, name: user.name, role: user.role,
-    });
-    if (orderType) params.append("orderType", orderType);
-    if (barcodeInfo) params.append("barcodeInfo", barcodeInfo);
-    return axiosClient.get(`api/orders/delivered/${id}?${params.toString()}`).then((res) => res.data);
+    return axiosClient.post(`api/orders/delivered/${id}`, {
+      email: user.email, name: user.name, role: user.role, groupName: user.groupName,
+      orderType, barcodeInfo, storageLocation,
+    }).then((res) => res.data);
+  }
+);
+
+// 🟢 Upload / replace the file for an existing inventory item
+export const uploadInventoryFile = createThunk(
+  "dashboard/inventory/uploadFile",
+  ({ id, formData }: { id: number; formData: FormData }) =>
+    axiosClient
+      .put(`api/inventory/${id}/file`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((res) => res.data)
+);
+
+// 🟢 H and P phrase lists
+export const getHPhrases = createAsyncThunk<any, void>(
+  "dashboard/getHPhrases",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.get("hphrases/getAll");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const getPPhrases = createAsyncThunk<any, void>(
+  "dashboard/getPPhrases",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.get("pphrases/getAll");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
   }
 );
 
 // 🟢 CRUD operations for Orders
 export const addOrder = createThunk("dashboard/addOrder", (formData: FormData) =>
-  axiosClient.post("api/orders/addOrder", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  }).then((res) => res.data)
+  axiosClient.post("api/orders/addOrder", formData).then((res) => res.data)
 );
 
 export const editOrder = createThunk("dashboard/editOrder", (order: any) =>
@@ -180,11 +210,7 @@ export const deleteOrder = createThunk("dashboard/deleteOrder", (id: number) =>
 );
 
 export const addFineChemicalOrder = createThunk("dashboard/addOrderFineChemical", (formData: FormData) =>
-  axiosClient.post("api/orders/addOrderFineChemical", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  }).then((res) => res.data)
+  axiosClient.post("api/orders/addOrderFineChemical", formData).then((res) => res.data)
 );
 
 export const editFineChemicalOrder = createThunk("dashboard/modifyOrder", (order: any) =>
@@ -247,12 +273,7 @@ export const fetchFineChemicals = createThunk("dashboard/finechemical/getFineChe
 export const addFineChemicals = createThunk("dashboard/finechemical/addFineChemical", (product: any) =>
   // axiosClient.post("/api/finechemical/addFineChemical", product).then((res) => res.data)
   axiosClient
-    .post("/api/finechemical/addFineChemical", product, {
-      headers: {
-         "Content-Type": "multipart/form-data", // ✅ required
-          Accept: "*/*",
-      },
-    })
+    .post("/api/finechemical/addFineChemical", product)
     .then((res) => res.data)
 );
 
@@ -344,11 +365,11 @@ export const deleteUsers = createThunk("auth/deleteUser", (id: number) =>
 );
 
 // ✅ Fetch Archieves
-export const getArchievesList = createAsyncThunk<any, { user: any }>(
+export const getArchievesList = createAsyncThunk<any, any>(
   'api/archive/archives',
-  async (user, { rejectWithValue }) => {
+  async (_user, { rejectWithValue }) => {
     try {
-      const response = await axiosClient.post<any>('api/archive/archives', user);
+      const response = await axiosClient.get<any>('api/archive/archives');
       return response.data;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'An unknown error occurred');
@@ -1908,18 +1929,6 @@ const dashboardSlice = createSlice({
   },
 });
 
-// ===================== H-PHRASES =====================
-
-export const getHPhrases = createAsyncThunk<any>(
-  'hphrases/getAll',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axiosClient.get<any>('hphrases/getAll');
-      return response.data;
-    } catch (error) { return rejectWithValue(error); }
-  }
-);
-
 export const createHPhrase = createAsyncThunk<any, any>(
   'hphrases/create',
   async (dto, { rejectWithValue }) => {
@@ -1946,18 +1955,6 @@ export const deleteHPhrase = createAsyncThunk<any, number>(
     try {
       await axiosClient.delete(`hphrases/delete/${id}`);
       return id;
-    } catch (error) { return rejectWithValue(error); }
-  }
-);
-
-// ===================== P-PHRASES =====================
-
-export const getPPhrases = createAsyncThunk<any>(
-  'pphrases/getAll',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axiosClient.get<any>('pphrases/getAll');
-      return response.data;
     } catch (error) { return rejectWithValue(error); }
   }
 );

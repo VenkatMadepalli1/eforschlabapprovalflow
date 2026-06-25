@@ -1,10 +1,13 @@
 package com.eforsch.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -12,8 +15,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.eforsch.dto.NotificationVO;
+import com.eforsch.entity.FineChemicalInventory;
+import com.eforsch.entity.Inventory;
 import com.eforsch.entity.NotificationEntity;
 import com.eforsch.entity.Order;
+import com.eforsch.repository.FineChemicalInventoryRepository;
+import com.eforsch.repository.InventoryRepository;
 import com.eforsch.repository.NotificationRepository;
 import com.eforsch.repository.OrderRepository;
 import com.eforsch.util.OrderConverter;
@@ -24,10 +31,16 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
-    
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private FineChemicalInventoryRepository fineChemicalInventoryRepository;
+
 	@Autowired
 	private NotificationService notificationService;
-	
+
 	@Autowired
 	private NotificationRepository notificationRepository;
 
@@ -60,13 +73,15 @@ public class OrderService {
 			// Both approvals must be done before PO dept acts
 			paginatedResult = orderRepository.findByAdminApproved(true, PageRequest.of(page - 1, size));
 		}else if(role.equalsIgnoreCase("labMgmt")) {
-			// Lab is the first approver — show all orders not yet lab-approved
-			paginatedResult = orderRepository.findByLabApproved(false, PageRequest.of(page - 1, size));
+			// Lab sees ALL orders: pending ones to approve, approved/rejected ones for status,
+			// and ordered ones so the Delivered button is available
+			paginatedResult = orderRepository.findAll(PageRequest.of(page - 1, size));
 		}else if(role.equalsIgnoreCase("admin")) {
 			paginatedResult = orderRepository.findAll(PageRequest.of(page - 1, size));
 		}else if(groupName != null && !groupName.isEmpty()) {
-			// Group leader is the second approver — show only lab-approved orders for their group
-			paginatedResult = orderRepository.findByGroupNameAndLabApproved(groupName, true, PageRequest.of(page - 1, size));
+			// Scientists and group leaders get all of their group's orders;
+			// the frontend hides not-yet-lab-approved orders from the group leader
+			paginatedResult = orderRepository.findByGroupName(groupName, PageRequest.of(page - 1, size));
 		}else {
 			paginatedResult = orderRepository.findAll(PageRequest.of(page - 1, size));
 		}
@@ -138,6 +153,19 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
     }
 
+    // Orders created outside the normal add-order flow (e.g. re-ordered from existing
+    // inventory) may have no notification row; create one instead of failing the approval
+    private NotificationEntity getOrCreateNotification(Long orderId, Order order) {
+        return notificationRepository.findByEntityId(orderId).orElseGet(() -> {
+            NotificationEntity n = new NotificationEntity();
+            n.setEntityId(orderId);
+            n.setEntityType("Order");
+            n.setGroupName(order.getGroupName());
+            n.setCreatedAt(System.currentTimeMillis());
+            return n;
+        });
+    }
+
     public OrderVO addOrder(OrderVO orderVO) {
         Order newOrder = OrderConverter.fromVOToEntity(orderVO, new Order());
         newOrder = orderRepository.save(newOrder);
@@ -160,27 +188,21 @@ public class OrderService {
     
     public OrderVO approveAdmin(Long orderId) {
     	Optional<Order> orderOptional = orderRepository.findById(orderId);
-    	
+
 		if (orderOptional.isPresent()) {
 			Order existingOrder = orderOptional.get();
 			existingOrder.setAdminApproved(true);
 			existingOrder.setAdminApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been approved by Group Leader. Ready for purchase processing.");
-			    notificationEntity.setTitle("Order Approved - Ready for PO");
-			    notificationEntity.setType("approval_pending");
-			    notificationEntity.setRole("podept"); // Group leader is last approver, notify PO dept
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been approved by Group Leader. Ready for purchase processing.");
+			notificationEntity.setTitle("Order Approved - Ready for PO");
+			notificationEntity.setType("approval_pending");
+			notificationEntity.setRole("podept");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -196,24 +218,15 @@ public class OrderService {
 			existingOrder.setStatus("rejected");
 			existingOrder.setAdminApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been rejected by Group Leader.");
-			    notificationEntity.setTitle("Order Rejected by Group Leader");
-			    notificationEntity.setType("rejected");
-			    notificationEntity.setRole("labMgmt"); // Notify scientist's group that the order was rejected by lab
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
-			
-			
-			
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been rejected by Group Leader.");
+			notificationEntity.setTitle("Order Rejected by Group Leader");
+			notificationEntity.setType("rejected");
+			notificationEntity.setRole("labMgmt");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -222,27 +235,21 @@ public class OrderService {
     
     public OrderVO labApprove(Long orderId) {
     	Optional<Order> orderOptional = orderRepository.findById(orderId);
-    	
+
 		if (orderOptional.isPresent()) {
 			Order existingOrder = orderOptional.get();
 			existingOrder.setLabApproved(true);
 			existingOrder.setLabApprovalStatusDate(new java.util.Date());
 			existingOrder = orderRepository.save(existingOrder);
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been approved by Lab Management. Now requires Group Leader approval.");
-			    notificationEntity.setTitle("Pending Group Leader Approval");
-			    notificationEntity.setType("approved");
-			    notificationEntity.setRole("groupleader"); // Lab is first approver, notify group leader next
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been approved by Lab Management. Now requires Group Leader approval.");
+			notificationEntity.setTitle("Pending Group Leader Approval");
+			notificationEntity.setType("approved");
+			notificationEntity.setRole("groupleader");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -261,22 +268,15 @@ public class OrderService {
 				existingOrder.setRejectReason(rejectReason);
 			}
 			existingOrder = orderRepository.save(existingOrder);
-			
-			
-			Optional<NotificationEntity> notificationOptional = notificationRepository.findByEntityId(orderId);
 
-			if (notificationOptional.isPresent()) {
-			    NotificationEntity notificationEntity = notificationOptional.get();
-			    notificationEntity.setMessage("Order #" + orderId + " has been rejected by Lab Management.");
-			    notificationEntity.setTitle("Lab Rejected");
-			    notificationEntity.setType("rejected");
-			    notificationEntity.setRole("groupleader"); // Notify scientist's group that the order was rejected by lab
-			    notificationEntity.setRead(false); // Example of updating the read status
-			    notificationEntity.setUpdatedAt(new java.util.Date()); // Assuming you have an updatedAt field
-			    notificationRepository.save(notificationEntity);
-			} else {
-			    throw new RuntimeException("Notification not found for Order ID: " + orderId);
-			}
+			NotificationEntity notificationEntity = getOrCreateNotification(orderId, existingOrder);
+			notificationEntity.setMessage("Order #" + orderId + " has been rejected by Lab Management.");
+			notificationEntity.setTitle("Lab Rejected");
+			notificationEntity.setType("rejected");
+			notificationEntity.setRole("groupleader");
+			notificationEntity.setRead(false);
+			notificationEntity.setUpdatedAt(new java.util.Date());
+			notificationRepository.save(notificationEntity);
 			return OrderConverter.fromEntityToVO(existingOrder);
 		} else {
 			throw new RuntimeException("Order not found");
@@ -307,6 +307,92 @@ public class OrderService {
 
     public void deleteOrder(Long orderId) {
         orderRepository.deleteById(orderId);
+    }
+
+    // Called when an order is marked as delivered.
+    // Creates a general inventory or fine chemical inventory item from the order data.
+    // Skips creation if an item already exists for this order (duplicate prevention).
+    public void createInventoryFromOrder(Order order) {
+        Long orderId = order.getOrderId();
+        String inventoryType = order.getInventoryType();
+
+        if ("fineChemicalInventory".equalsIgnoreCase(inventoryType)) {
+            FineChemicalInventory item = new FineChemicalInventory();
+            item.setSourceOrderId(orderId);
+            item.setProductname(order.getProductName());
+            item.setCatalogue(order.getCatalogue());
+            item.setCompanyname(order.getCompanyName());
+            item.setQuantity(order.getQuantity() != null ? order.getQuantity().toString() : null);
+            item.setExpiryDate(order.getExpiryDate());
+            item.setCompanyInternalNo(order.getCompanyInternalNo());
+            item.setSapMaterialNo(order.getSapMaterialNo());
+            item.setWvsubqty(order.getWeightVolSubQty());
+            item.setBudgetno(order.getBudgetno());
+            item.setOrderdate(order.getOrderDate());
+            item.setOrderedby(order.getOrderedBy());
+            item.setConcentration(order.getConcentration());
+            item.setPrice(order.getPrice() != null ? order.getPrice() : 0.0);
+            item.setRemarks(order.getRemarks());
+            item.setCasnumber(order.getCasNumber());
+            item.setHazardousSubstance(order.getHazardousSubstance() != null ? Boolean.parseBoolean(order.getHazardousSubstance()) : null);
+            item.setCmrSubstance(order.getCmrSubstance() != null ? Boolean.parseBoolean(order.getCmrSubstance()) : null);
+            item.setSkinResorptive(order.getSkinResorptive() != null ? Boolean.parseBoolean(order.getSkinResorptive()) : null);
+            try {
+                ObjectMapper om = new ObjectMapper();
+                item.setGhsSymbols(order.getGhsSymbols() != null ? om.writeValueAsString(order.getGhsSymbols()) : null);
+                item.setGhsSignalWord(order.getGhsSignalWord() != null ? om.writeValueAsString(order.getGhsSignalWord()) : null);
+            } catch (Exception e) {
+                item.setGhsSymbols(null);
+                item.setGhsSignalWord(null);
+            }
+            item.sethPhrases(order.gethPhrases());
+            item.setpPhrases(order.getpPhrases());
+            item.setSubstitutionCheck(order.getSubstitutionCheck());
+            item.setSubstitutionOption(order.getSubstitutionOption());
+            item.setStorageLocation(order.getStorageLocation());
+            item.setApplicationOfHazardousSubstance(order.getApplicationOfHazardousSubstance());
+            item.setConcentrationWorkingVolume(order.getConcentrationWorkingVolume());
+            item.setLabNoWorkingWithChemical(order.getLabNoWorkingWithChemical());
+            item.setNumberOfEmployees(order.getNumberOfEmployees());
+            item.setHandlingDurationGreater15Min(order.getHandlingDurationGreater15Min());
+            item.setHazardousDueToSkinContact(order.getHazardousDueToSkinContact());
+            item.setGroupName(order.getGroupName());
+            item.setStorageLocation(order.getStorageLocation());
+            item.setOrderType(order.getOrderType());
+            item.setBarcodeInfo(order.getBarcodeInfo());
+            item.setCreatedAt(new Date());
+            if (order.getSafetydatasheet() != null) {
+                item.setFileName(order.getSafetydatasheet());
+                item.setFileContent(order.getFileContent());
+            }
+            fineChemicalInventoryRepository.save(item);
+
+        } else {
+            // Default: general inventory
+            Inventory item = new Inventory();
+            item.setSourceOrderId(orderId);
+            item.setProductname(order.getProductName());
+            item.setCatalogue(order.getCatalogue());
+            item.setCompanyname(order.getCompanyName());
+            item.setQuantity(order.getQuantity());
+            item.setCompanyinternalno(order.getCompanyInternalNo());
+            item.setSapmaterialno(order.getSapMaterialNo());
+            item.setWeightvolsubqty(order.getWeightVolSubQty());
+            item.setBudgetno(order.getBudgetno());
+            item.setOrderdate(order.getOrderDate());
+            item.setExpirydate(order.getExpiryDate());
+            item.setConcentration(order.getConcentration());
+            item.setPrice(order.getPrice() != null ? order.getPrice() : 0.0);
+            item.setRemarks(order.getRemarks());
+            item.setAddedby(order.getOrderedBy());
+            item.setGroupName(order.getGroupName());
+            item.setShared(false);
+            if (order.getSafetydatasheet() != null) {
+                item.setFileName(order.getSafetydatasheet());
+                item.setFileContent(order.getFileContent());
+            }
+            inventoryRepository.save(item);
+        }
     }
 }
 

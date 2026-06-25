@@ -254,82 +254,34 @@ public class OrderController {
         }
     }
     
-    @GetMapping("/delivered/{orderId}")
-    public ResponseEntity<?> getOrdersListByDelivered(@PathVariable Long orderId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "10") int id,
-            @RequestParam String email,
-            @RequestParam String name,
-            @RequestParam String role,
-            @RequestParam(required = false) String groupName,
-            @RequestParam(required = false) String orderType,
-            @RequestParam(required = false) String barcodeInfo) {
+    @PostMapping("/delivered/{orderId}")
+    public ResponseEntity<?> markOrderDelivered(@PathVariable Long orderId,
+            @RequestBody Map<String, Object> body) {
 
         try {
+        	String orderType = (String) body.get("orderType");
+        	String barcodeInfo = (String) body.get("barcodeInfo");
+        	String storageLocation = (String) body.get("storageLocation");
 
         	Order modifyOrder = orderService.getOrderById(orderId);
         	modifyOrder.setStatus("delivered");
         	if (orderType != null) modifyOrder.setOrderType(orderType);
         	if (barcodeInfo != null) modifyOrder.setBarcodeInfo(barcodeInfo);
+        	if (storageLocation != null) modifyOrder.setStorageLocation(storageLocation);
         	OrderVO modifyOrderVO = OrderConverter.fromEntityToVO(modifyOrder);
         	orderService.modifyOrder(modifyOrderVO);
-        	
-        	
-            Map<String, Object> ordersData = orderService.getOrdersListByStatus(page, size, "delivered");
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("message", "Data fetched successfully");
-            response.put("data", Map.of(
-            	    "columns", List.of(
-            	    		 Map.of("key", "orderId", "label", "ID", "sortable", true),
-                 	        Map.of("key", "productName", "label", "Product Name", "sortable", true, "filterable", true),
-                 	        Map.of("key", "inventoryType", "label", "Inventory Type", "sortable", true, "filterable", true),
-                 	       Map.of("key", "catalogue", "label", "Catalogue No", "filterable", true),
-                 	        Map.of("key", "expiryDate",       "label", "Expiry Date",        "sortable", true,  "filterable", true),
-                 	        Map.of("key", "companyInternalNo","label", "Company Internal No", "filterable", true),
-                 	        Map.of("key", "sapMaterialNo",    "label", "SAP Material No",     "filterable", true),
-                 	        Map.of("key", "weightVolSubQty",  "label", "Weight/Vol Sub Qty",  "filterable", true),
-                 	        Map.of("key", "orderDate",        "label", "Order Date",          "sortable", true,  "filterable", true),
-                 	        Map.of("key", "orderedBy",        "label", "Ordered By",          "filterable", true),
-                 	        Map.of("key", "createdBy",        "label", "Added By",            "filterable", true),
-                 	        Map.of("key", "concentration",    "label", "Concentration",       "filterable", true),
-                 	         Map.of("key", "adminApproved",         "label", "GL Approved",  "filterable", true),
-                 	        Map.of("key", "labApproved",         "label", "LM Approved",  "filterable", true),
-                 	        Map.of("key", "companyName", "label", "Company Name", "filterable", true),
-                 	        Map.of("key", "quantity", "label", "Quantity", "sortable", true),
-                 	        Map.of("key", "budgetno", "label", "Budget", "filterable", true),
-                 	        Map.of("key", "price", "label", "Price", "filterable", true),
-                 	        Map.of("key", "approvalStatusDate", "label", "Date approved", "filterable", true),
-                 	        Map.of("key", "adminName", "label", "Admin Name", "filterable", true),
-                 	        Map.of("key", "userName", "label", "User Name", "filterable", true),
-                 	        Map.of("key", "status", "label", "Status", "filterable", true),
-                 	        Map.of("key", "fileName", "label", "File Name", "filterable", true),
-                 	        Map.of("key", "createdAt", "label", "Created At", "filterable", true),
-                 	        Map.of("key", "updatedAt", "label", "Updated At", "filterable", true),
-                 	        Map.of("key", "updatedBy", "label", "Updated By", "filterable", true),
-                 	        Map.of("key", "groupName", "label", "Group Name", "filterable", true),
-                 	        Map.of("key", "remarks", "label", "Remark", "filterable", true),
-                 	       Map.of("key", "productId",         "label", "Product ID",          "filterable", true),
-                 	      Map.of("key", "casNumber",         "label", "CAS Number",          "filterable", true),
-                 	      Map.of("key", "hazardousSubstance","label", "Hazardous Substance", "filterable", true),
-                 	      Map.of("key", "cmrSubstance",      "label", "CMR Substance",       "filterable", true),
-                 	      Map.of("key", "skinResorptive",    "label", "Skin Resorptive",     "filterable", true),
-                 	      Map.of("key", "ghsSymbols",        "label", "GHS Symbols",         "filterable", true),
-                 	      Map.of("key", "ghsCheckbox",       "label", "GHS Checkbox",        "filterable", true),
-                 	      Map.of("key", "hPhrases",          "label", "H-Phrases",           "filterable", true),
-                 	      Map.of("key", "pPhrases",          "label", "P-Phrases",           "filterable", true),
-                 	      Map.of("key", "substitutionCheck", "label", "Substitution Check",  "filterable", true),
-                 	      Map.of("key", "storageLocation",   "label", "Storage Location",    "filterable", true),
-                 	     Map.of("key", "attachment",       "label", "Attachment",          "filterable", false)
-            	    		),
-                    "list", ordersData.get("list"),
-                    "pagination", ordersData.get("pagination")
-            ));
+        	try {
+        		orderService.createInventoryFromOrder(modifyOrder);
+        	} catch (Exception invEx) {
+        		System.err.println("WARNING: Failed to create inventory from order " + orderId + ": " + invEx.getMessage());
+        		invEx.printStackTrace();
+        	}
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(new SuccessResponse("success", "Order marked as delivered", null));
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(new ErrorResponse("error", "Unauthorized. Invalid or missing token.", 401));
+        	System.err.println("ERROR in markOrderDelivered for order " + orderId + ": " + e.getMessage());
+        	e.printStackTrace();
+            return ResponseEntity.status(500).body(new ErrorResponse("error", e.getMessage(), 500));
         }
     }
     

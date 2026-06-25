@@ -47,7 +47,7 @@ const UpdateOrderFormConfig = (
   },
   {
     id: "weightvolsubqty",
-    label: "W/V/Sub Qty",
+    label: "Weight / Vol / Sub QTY",
     type: "text",
     validation: { required: true },
   },
@@ -90,23 +90,10 @@ const UpdateOrderFormConfig = (
   },
   {
     id: "attachment",
-    label: "Attachment",
+    label: "Please upload SDS in DE and/or EN here",
     type: "file",
+    helpText: "Please upload SDS in DE and/or EN here. Save the pdf with the name “CAS No_name_company_language_year”",
     validation: { required: false },
-  },
-  {
-    id: "orderType",
-    label: "Order Type (Bulk / Non-Bulk)",
-    type: "radio",
-    options: ["bulk", "nonbulk"],
-    validation: { required: false },
-  },
-  {
-    id: "barcodeInfo",
-    label: "Barcode Info",
-    type: "text",
-    validation: { required: false },
-    showIf: { field: "orderType", value: "nonbulk" },
   },
 ];
 

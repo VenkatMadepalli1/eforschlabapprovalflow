@@ -22,6 +22,7 @@ public class InventoryVO {
 	    private Date expirydate;
 	    private String addedby;
 	    private boolean shared;
+	    private Long sourceOrderId;
 
 	    // File details
 	    private String fileName;
@@ -129,6 +130,12 @@ public class InventoryVO {
 	    }
 	    public void setShared(boolean shared) {
 	        this.shared = shared;
+	    }
+	    public Long getSourceOrderId() {
+	        return sourceOrderId;
+	    }
+	    public void setSourceOrderId(Long sourceOrderId) {
+	        this.sourceOrderId = sourceOrderId;
 	    }
 	    public String getFileName() {
 	        return fileName;

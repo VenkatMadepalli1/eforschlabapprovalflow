@@ -295,17 +295,20 @@ public class FineChemicalService {
 			itemMap.put("substitutioncheck", item.getSubstitutionCheck());
 			itemMap.put("storagelocation", item.getStorageLocation());
 			itemMap.put("substitutionOption", item.getSubstitutionOption());
-			itemMap.put("groupname", item.getGroupName());
-			itemMap.put("createdat", item.getCreatedAt());
-			itemMap.put("price", item.getPrice());
-			itemMap.put("filename", item.getFileName());
-			itemMap.put("filetype", item.getFileType());
 			itemMap.put("applicationOfHazardousSubstance", item.getApplicationOfHazardousSubstance());
 			itemMap.put("concentrationWorkingVolume", item.getConcentrationWorkingVolume());
 			itemMap.put("labNoWorkingWithChemical", item.getLabNoWorkingWithChemical());
 			itemMap.put("numberOfEmployees", item.getNumberOfEmployees());
 			itemMap.put("handlingDurationGreater15Min", item.getHandlingDurationGreater15Min());
 			itemMap.put("hazardousDueToSkinContact", item.getHazardousDueToSkinContact());
+			itemMap.put("groupname", item.getGroupName());
+			itemMap.put("createdat", item.getCreatedAt());
+			itemMap.put("price", item.getPrice());
+			itemMap.put("filename", item.getFileName());
+			itemMap.put("filetype", item.getFileType());
+			itemMap.put("orderType", item.getOrderType());
+			itemMap.put("barcodeInfo", item.getBarcodeInfo());
+			itemMap.put("sourceOrderId", item.getSourceOrderId());
 
 			Map<String, Object> pagination = Map.of("currentPage", 1, "totalRecords", 1, "totalPages", 1, "pageSize",
 					10);
@@ -395,18 +398,18 @@ public class FineChemicalService {
 		map.put("substitutioncheck", item.getSubstitutionCheck()); // Return as object directly
 		map.put("storagelocation", item.getStorageLocation());
 		map.put("substitutionOption", item.getSubstitutionOption());
-		map.put("groupName", item.getGroupName());
-		map.put("price", item.getPrice());
-		map.put("createdAt", item.getCreatedAt());
-		map.put("filename", item.getFileName());
-		map.put("filetype", item.getFileType());
-		map.put("fileContent", item.getFileContent() != null ? "Exists" : "None"); // Indicate presence of file content
 		map.put("applicationOfHazardousSubstance", item.getApplicationOfHazardousSubstance());
 		map.put("concentrationWorkingVolume", item.getConcentrationWorkingVolume());
 		map.put("labNoWorkingWithChemical", item.getLabNoWorkingWithChemical());
 		map.put("numberOfEmployees", item.getNumberOfEmployees());
 		map.put("handlingDurationGreater15Min", item.getHandlingDurationGreater15Min());
 		map.put("hazardousDueToSkinContact", item.getHazardousDueToSkinContact());
+		map.put("groupName", item.getGroupName());
+		map.put("price", item.getPrice());
+		map.put("createdAt", item.getCreatedAt());
+		map.put("filename", item.getFileName());
+		map.put("filetype", item.getFileType());
+		map.put("fileContent", item.getFileContent() != null ? "Exists" : "None");
 		return map;
 	}
 
@@ -642,6 +645,7 @@ public class FineChemicalService {
 		vo.setConcentration(entity.getConcentration());
 		vo.setAmount(entity.getAmount());
 		vo.setRemarks(entity.getRemarks());
+		vo.setSourceOrderId(entity.getSourceOrderId());
 		vo.setCasnumber(entity.getCasnumber());
 		vo.setHazardousSubstance(entity.getHazardousSubstance());
 		vo.setCmrSubstance(entity.getCmrSubstance());
@@ -680,6 +684,8 @@ public class FineChemicalService {
 		vo.setSubstitutionCheck(entity.getSubstitutionCheck());
 		vo.setSubstitutionOption(entity.getSubstitutionOption());
 		vo.setStorageLocation(entity.getStorageLocation());
+		vo.setOrderType(entity.getOrderType());
+		vo.setBarcodeInfo(entity.getBarcodeInfo());
 		vo.setApplicationOfHazardousSubstance(entity.getApplicationOfHazardousSubstance());
 		vo.setConcentrationWorkingVolume(entity.getConcentrationWorkingVolume());
 		vo.setLabNoWorkingWithChemical(entity.getLabNoWorkingWithChemical());

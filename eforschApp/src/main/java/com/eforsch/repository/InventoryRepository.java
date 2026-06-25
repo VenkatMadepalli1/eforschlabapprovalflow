@@ -28,4 +28,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 	Page<Inventory> findByGroupNameContainingIgnoreCaseAndSharedFalse(String groupName, Pageable pageable);
 
 	Page<Inventory> findByGroupNameContainingIgnoreCaseAndShared(String groupName, boolean shared, Pageable pageable);
+
+	boolean existsBySourceOrderId(Long sourceOrderId);
 }

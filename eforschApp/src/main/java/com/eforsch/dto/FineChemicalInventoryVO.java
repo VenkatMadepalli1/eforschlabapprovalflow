@@ -37,6 +37,8 @@ public class FineChemicalInventoryVO {
     private String substitutionCheck;
     private String substitutionOption;
     private String storageLocation;
+    private String orderType;
+    private String barcodeInfo;
     private String applicationOfHazardousSubstance;
     private String concentrationWorkingVolume;
     private String labNoWorkingWithChemical;
@@ -51,7 +53,8 @@ public class FineChemicalInventoryVO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Date createdAt;
     private double price;
-    
+    private Long sourceOrderId;
+
     // File details
     private String fileName;
     private String fileType;
@@ -59,7 +62,13 @@ public class FineChemicalInventoryVO {
     // Instead of raw byte[], expose Base64 string for JSON APIs
     private byte[] fileContent;
 	
-    public String getFileName() {
+    public Long getSourceOrderId() {
+		return sourceOrderId;
+	}
+	public void setSourceOrderId(Long sourceOrderId) {
+		this.sourceOrderId = sourceOrderId;
+	}
+	public String getFileName() {
 		return fileName;
 	}
 	public void setFileName(String fileName) {
@@ -233,6 +242,10 @@ public class FineChemicalInventoryVO {
 	public void setStorageLocation(String storageLocation) {
 		this.storageLocation = storageLocation;
 	}
+	public String getOrderType() { return orderType; }
+	public void setOrderType(String orderType) { this.orderType = orderType; }
+	public String getBarcodeInfo() { return barcodeInfo; }
+	public void setBarcodeInfo(String barcodeInfo) { this.barcodeInfo = barcodeInfo; }
 	public String getApplicationOfHazardousSubstance() { return applicationOfHazardousSubstance; }
 	public void setApplicationOfHazardousSubstance(String v) { this.applicationOfHazardousSubstance = v; }
 	public String getConcentrationWorkingVolume() { return concentrationWorkingVolume; }

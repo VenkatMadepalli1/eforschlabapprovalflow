@@ -17,5 +17,6 @@ public interface FineChemicalInventoryRepository extends JpaRepository<FineChemi
 	FineChemicalInventory findByProductId(Long intValue);
 	
 	Page<FineChemicalInventory> findByShared(boolean shared, Pageable pageable);
-	
+
+	boolean existsBySourceOrderId(Long sourceOrderId);
 }

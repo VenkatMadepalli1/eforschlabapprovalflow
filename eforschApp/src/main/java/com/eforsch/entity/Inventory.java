@@ -36,8 +36,10 @@ public class Inventory {
 
     @Temporal(TemporalType.DATE)
     private Date expirydate;
-    private String addedby;    
+    private String addedby;
     private boolean shared;
+    @Column(unique = true)
+    private Long sourceOrderId;
 
 
     @Column(name = "filename", length = 255)
@@ -177,6 +179,14 @@ public class Inventory {
 
 	public void setShared(boolean shared) {
 		this.shared = shared;
+	}
+
+	public Long getSourceOrderId() {
+		return sourceOrderId;
+	}
+
+	public void setSourceOrderId(Long sourceOrderId) {
+		this.sourceOrderId = sourceOrderId;
 	}
 
 	public String getFileName() {
